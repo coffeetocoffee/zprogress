@@ -214,4 +214,4 @@ Version 1.0.0, and honest about its edges:
 
 ## License
 
-Not yet specified.
+MIT. See [LICENSE](LICENSE).
