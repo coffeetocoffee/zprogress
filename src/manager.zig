@@ -180,6 +180,8 @@ pub const Manager = struct {
         // Re-query width each tick; changed width -> reflow (§3.4/§6).
         const term_width = self.terminal.width();
 
+        if (self.terminal.mode == .silent) return .ok;
+
         if (self.terminal.mode != .tty) {
             self.plainModeLocked(now_ns);
             return .ok;
@@ -549,6 +551,24 @@ fn barCells(rendered: []const u8) []const u8 {
     return rendered[start + 1 .. end];
 }
 
+test "silent mode emits nothing" {
+    const allocator = std.testing.allocator;
+    var buf: [256]u8 = undefined;
+    var w = std.Io.Writer.fixed(&buf);
+    var mgr = try Manager.init(std.Io.failing, allocator, &w);
+    mgr.terminal.mode = .silent;
+    mgr.now_override_ns = 0;
+    defer mgr.deinit();
+
+    const a = try mgr.addTree(.{ .label = "build", .len = 10, .style = comptime template.Style.parse("{percent}") });
+    try mgr.mountBar(a);
+    a.setPos(10);
+
+    _ = mgr.tick();
+    try std.testing.expectEqual(@as(usize, 0), w.end);
+    try std.testing.expectEqual(@as(u16, 0), mgr.lines_drawn);
+}
+
 test "manager multi-mount plain mode" {
     const allocator = std.testing.allocator;
     var buf: [256]u8 = undefined;
@@ -589,7 +609,7 @@ test "TreeRenderer standalone (P3 extraction)" {
     tr.draw(&w);
     try std.testing.expect(std.mem.indexOf(u8, w.buffered(), "[done] pkg 100% 0.0s") != null);
 }
-test "diff emit skips unchanged lines (�3.5)" {
+test "diff emit skips unchanged lines (�3.5)" {
     const allocator = std.testing.allocator;
     var buf: [1024]u8 = undefined;
     var w = std.Io.Writer.fixed(&buf);

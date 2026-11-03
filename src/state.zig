@@ -115,7 +115,10 @@ pub const Node = struct {
 
     /// Build a frame for rendering. The message is copied into
     /// `msg_buf` (caller-owned stack storage, alive through format()).
+    /// First call stamps `started_at_ns`, which is what elapsed/eta/speed
+    /// measure from.
     pub fn frame(self: *Node, now_ns: u64, msg_buf: []u8) template.Frame {
+        if (self.started_at_ns == 0) self.started_at_ns = now_ns;
         return .{
             .pos = self.pos.load(.monotonic),
             .len = self.len,
@@ -133,6 +136,15 @@ test "monotonic setPos" {
     try std.testing.expectEqual(@as(u64, 50), n.getPos());
     n.setPos(75);
     try std.testing.expectEqual(@as(u64, 75), n.getPos());
+}
+
+test "frame stamps started_at on first sample" {
+    var n: Node = .{ .len = 10, .label = "", .style = undefined };
+    var buf: [8]u8 = undefined;
+    const first = n.frame(1 * std.time.ns_per_s, &buf);
+    try std.testing.expectEqual(@as(u64, 0), first.elapsed_ns);
+    const later = n.frame(3 * std.time.ns_per_s, &buf);
+    try std.testing.expectEqual(@as(u64, 2 * std.time.ns_per_s), later.elapsed_ns);
 }
 
 test "message slot" {

@@ -41,7 +41,7 @@ pub const Bar = struct {
         self.mgr.deinit();
     }
 
-    pub fn setPos(self: *Bar, n: u64) void {
+    pub fn setPos(self: *Bar, n: u32) void {
         self.node.setPos(n);
     }
 

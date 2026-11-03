@@ -20,7 +20,7 @@ pub fn main(init: std.process.Init) !void {
 
     for (0..101) |i| {
         if (zprogress.signal.interrupted()) return; // clean exit; restore in deinit
-        bar.setPos(i);
+        bar.setPos(@intCast(i));
         _ = bar.tick();
         try io.sleep(.{ .nanoseconds = 30 * std.time.ns_per_ms }, .awake);
     }
